@@ -4,4 +4,5 @@ pypdf
 chromadb
 streamlit
 python-dotenv
+langchain-core
 langchain-community
