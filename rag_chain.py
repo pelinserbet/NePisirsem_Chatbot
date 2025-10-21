@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 # LangChain ve Google AI bileşenleri
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 
@@ -108,4 +108,5 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"Hata oluştu: {e}")
+
         print("Lütfen API anahtarınızın doğru olduğundan ve 'data_loader.py' dosyasının başarıyla çalışmış olduğundan emin olun.")
