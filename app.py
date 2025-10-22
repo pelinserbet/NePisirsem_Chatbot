@@ -3,7 +3,7 @@ from rag_chain import setup_rag_chain
 import os 
 from dotenv import load_dotenv
 
-# API Anahtarını Yükle (Gerekli, çünkü Streamlit uygulaması yeniden başlatılabilir)
+# API Anahtarını Yükle 
 load_dotenv()
 if not os.getenv("GEMINI_API_KEY"):
     st.error("API Anahtarı bulunamadı. Lütfen .env dosyasını kontrol edin.")
@@ -65,4 +65,5 @@ if prompt := st.chat_input("Hangi yemeği yapmak istiyorsun? (Örn: Menemen tari
             st.markdown(assistant_response)
 
     # 3. Asistan Cevabını Geçmişe Kaydetme
+
     st.session_state.messages.append({"role": "assistant", "content": assistant_response})
