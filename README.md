@@ -92,4 +92,4 @@ Uygulama tarayıcınızda açılacaktır (http://localhost:8501)
 | **Bağlamsal Sorgu** | (Önce “Köfte”, sonra “Nasıl yaparım?”) | Sohbet bağlamı takibi |
 
 ## 🌐 DEPLOY LİNKİ 
-**[ ]**
+**[ https://nepisirsemchatbot.streamlit.app/ ]**
