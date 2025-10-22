@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 # LangChain ve Google AI bileşenleri
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate  
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
 
 
 # API Anahtarını Yükle
@@ -15,7 +15,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Sabit Değerler
 CHROMA_DB_DIR = "./chroma_db"
-GEMINI_MODEL = "gemini-2.5-flash" 
+GEMINI_MODEL = "gemini-1.5-flash"  # model ismini doğru sürümle eşleştirdik
+
 
 def setup_rag_chain():
     """
@@ -24,24 +25,20 @@ def setup_rag_chain():
     if not GEMINI_API_KEY:
         raise ValueError("API Anahtarı bulunamadı. Lütfen .env dosyasını kontrol edin.")
 
-    # 1. Embedding Modeli ve Vektör Veritabanını Yükleme (Indexing Aşaması Sonucu)
+    # 1️⃣ Embedding Modeli ve Vektör Veritabanını Yükleme
     embeddings = GoogleGenerativeAIEmbeddings(
-        model="text-embedding-004",
+        model="models/embedding-001",
         google_api_key=GEMINI_API_KEY
     )
-    # Daha önce oluşturduğumuz ChromaDB veritabanını disktenden (./chroma_db) yükler.
+
     vectorstore = Chroma(
         persist_directory=CHROMA_DB_DIR,
         embedding_function=embeddings
     )
-    # Vektör veritabanını arama (retriever) aracına dönüştürür.
-    retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 5} # En alakalı 5 parça (chunk) getir
-    )
 
-    # 2. Prompt (Yapay Zeka'ya Rolünü ve Kuralını Belirtme)
-    # Bu Prompt, chatbot'un iki tür sorguya (Malzeme ve Yemek Adı) nasıl cevap vereceğini belirler.
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 5})
+
+    # 2️⃣ Prompt Tanımı
     prompt_template = """
     Sen bir Türk Mutfağı Yemek Asistanısın. Görevin, SADECE sana verilen tarifler ({context}) üzerinden kullanıcının sorularını cevaplamaktır. Cevaplarını daima Türkçe vermelisin.
 
@@ -55,7 +52,7 @@ def setup_rag_chain():
     b) **Miktar Kontrolü:** Kullanıcının elindeki miktarı **AŞAN** tarifleri ele. Elindeki miktarın YETERLİ olduğu 2 veya 3 uygun yemeğin adını listele.
     c) **Ek Malzeme:** Listelediğin her bir yemek için, elinde *olmayan* **ek olarak gereken temel malzemeleri** (tuz, su, karabiber, sıvı yağ gibi genel mutfak malzemeleri hariç) belirt.
     d) **Rastgele Öneri:** Eğer malzeme veya kategori belirtilmezse ('Bana bir şey öner'), rastgele 2-3 tarif öner.
-    
+
     3. **Konuşma Dışı Geri Bildirim veya Selamlaşma:** Kullanıcı 'tamam', 'teşekkürler', 'merhaba' gibi ifadeler kullandığında veya alakasız bir soru sorduğunda, kibarca ve kısa cevaplar ver. **Asla** 'Üzgünüm, benim uzmanlık alanım...' kalıbını kullanma.
     * Örnek Cevaplar: "Rica ederim, başka nasıl yardımcı olabilirim?", "Merhaba! Hangi tarifi arıyorsunuz?", "Üzgünüm, sadece tarifler konusunda yardımcı olabilirim."
     ---
@@ -70,24 +67,21 @@ def setup_rag_chain():
 
     prompt = ChatPromptTemplate.from_template(prompt_template)
 
-    # 3. LLM (Gemini) Tanımlama
+    # 3️⃣ LLM Tanımlama
     llm = ChatGoogleGenerativeAI(
         model=GEMINI_MODEL,
         google_api_key=GEMINI_API_KEY,
-        temperature=0.0 # Cevapların bilgiye dayalı ve tutarlı olması için yaratıcılığı kapatıyoruz.
+        temperature=0.0
     )
 
-    # 4. RAG Zincirini Kurma
-    # Document Chain: Retriever'dan gelen bağlamı alıp Prompt içine yerleştirir.
+    # 4️⃣ Zincirleri Oluşturma
     document_chain = create_stuff_documents_chain(llm, prompt)
-    
-    # Retrieval Chain: Retriever'ı çalıştırır, sonucu Document Chain'e iletir ve nihai cevabı üretir.
     rag_chain = create_retrieval_chain(retriever, document_chain)
 
     return rag_chain
 
-# Modülü test etmek için küçük bir örnek
-# Yeni Test ve Sohbet Bloğu
+
+# Test Bloğu
 if __name__ == "__main__":
     try:
         rag_executor = setup_rag_chain()
@@ -95,17 +89,15 @@ if __name__ == "__main__":
         print("Sohbeti sonlandırmak için 'çıkış' yazın.")
 
         while True:
-            # Kullanıcıdan giriş alma
             user_input = input("\nSenin Sorun: ")
 
             if user_input.lower() in ["çıkış", "exit", "kapat"]:
                 print("Ne Pişirsem sonlandırılıyor. Afiyet olsun!")
                 break
-            
-            # RAG zincirini çalıştırma ve cevabı yazdırma
+
             print("Ne Pişirsem Asistan Cevabı: ")
             response = rag_executor.invoke({"input": user_input})
-            print(response['answer'])
+            print(response["answer"])
 
     except Exception as e:
         print(f"Hata oluştu: {e}")
