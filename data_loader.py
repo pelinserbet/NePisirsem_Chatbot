@@ -3,9 +3,9 @@ from dotenv import load_dotenv
 
 # Yeni ve doğru importlar
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_community.document_loaders import PyPDFLoader # Artık langchain_community'den alıyoruz
+from langchain_community.document_loaders import PyPDFLoader 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma # Artık langchain_community'den alıyoruz
+from langchain_community.vectorstores import Chroma 
 
 # 1. API Anahtarını Yükle
 # Bu, .env dosyanızdaki anahtarı kodun kullanabileceği ortama yükler.
@@ -61,4 +61,5 @@ def load_and_index_data():
     print(f"Veritabanı başarıyla oluşturuldu ve [{CHROMA_DB_DIR}] klasörüne kaydedildi.")
 
 if __name__ == "__main__":
+
     load_and_index_data()
