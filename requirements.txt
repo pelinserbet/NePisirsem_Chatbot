@@ -1,9 +1,8 @@
-langchain
-langchain-community
-langchain-google-genai
-google-genai
-chromadb
-pypdf
+langchain==0.2.14
+langchain-community==0.1.6
+langchain-google-genai==0.2.7
+google-genai==0.0.7
+chromadb==0.3.33
+pypdf==3.16.0
 streamlit==1.36.0
 python-dotenv==1.0.1
-
