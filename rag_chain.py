@@ -4,10 +4,10 @@ from dotenv import load_dotenv
 # LangChain ve Google AI bileşenleri
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
-from langchain.schema.runnable import RunnableMap
+from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate  
+
 
 # API Anahtarını Yükle
 load_dotenv()
@@ -80,14 +80,9 @@ def setup_rag_chain():
     # 4. RAG Zincirini Kurma
     # Document Chain: Retriever'dan gelen bağlamı alıp Prompt içine yerleştirir.
     document_chain = create_stuff_documents_chain(llm, prompt)
-
-    # LCEL (LangChain İfade Dili) ile RAG zincirini kurma:
-    # 1. RunnablePassthrough: Zincire gelen input'u alır.
-    # 2. assign: "context" anahtarını (retriever sonucu) ve "input" anahtarını (kullanıcı sorusu) korur.
-    # 3. | (pipe operatörü): Çıktıyı bir sonraki bileşene (document_chain) iletir.
-    rag_chain = RunnablePassthrough.assign(
-        context=(lambda x: x["input"]) | retriever
-    ) | document_chain
+    
+    # Retrieval Chain: Retriever'ı çalıştırır, sonucu Document Chain'e iletir ve nihai cevabı üretir.
+    rag_chain = create_retrieval_chain(retriever, document_chain)
 
     return rag_chain
 
@@ -114,13 +109,4 @@ if __name__ == "__main__":
 
     except Exception as e:
         print(f"Hata oluştu: {e}")
-
         print("Lütfen API anahtarınızın doğru olduğundan ve 'data_loader.py' dosyasının başarıyla çalışmış olduğundan emin olun.")
-
-
-
-
-
-
-
-
