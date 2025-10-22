@@ -206,9 +206,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# GEREKLİ EKLEMELER
-# 1. RAG Vektör Veritabanı (ChromaDB)
-chroma_db/
 
 # 2. Streamlit Geçici Dosyaları
 .streamlit/
