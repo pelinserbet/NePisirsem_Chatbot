@@ -4,14 +4,8 @@ from dotenv import load_dotenv
 # LangChain ve Google AI bileşenleri
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import Chroma
-#from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
-#from langchain.chains import create_retrieval_chain
-
-from langchain.chains.combine_documents.stuff import create_stuff_documents_chain
-from langchain.chains.retrieval import create_retrieval_chain
-
-
+from langchain.chains import RetrievalQA
+from langchain.prompts import ChatPromptTemplate
 
 # API Anahtarını Yükle
 load_dotenv()
@@ -48,17 +42,10 @@ def setup_rag_chain():
 
     Lütfen kullanıcının sorgusunu analiz et ve şu kurallara göre cevapla:
 
-    1. **Tarif İsteği veya Detay Sorulursa (Yemek Adı Varsa):** Kullanıcı bir yemeğin adını (Örn: 'Menemen', 'Sulu Köfte', 'Nasıl yaparım?' gibi bağlamsal sorular) sorduğunda, **DAİMA o yemeğin tarifini tamamen sun.** Tarif, Yemek adını, HAZIRLIK SÜRESİNİ, PİŞİRME SÜRESİNİ, malzemeleri ve adım adım yapılışını listeler halinde, temiz bir formatta içermelidir.
-    * **Önemli Kural:** Eğer isimle bir tarif soruluyorsa ve bağlamda o tarif bulunuyorsa, **asla** 'Üzgünüm' deme, tarifi sun!
+    1. **Tarif İsteği veya Detay Sorulursa (Yemek Adı Varsa):** Kullanıcı bir yemeğin adını sorduğunda, **DAİMA o yemeğin tarifini tamamen sun.**
+    2. **Malzeme ve/veya Kategori Tabanlı Öneri (Filtreleme):** Kullanıcının elindeki malzemeleri ve kategori isteğini uygula, uygun 2-3 tarif öner.
+    3. **Konuşma Dışı Geri Bildirim veya Selamlaşma:** Kullanıcı 'tamam', 'teşekkürler', 'merhaba' gibi ifadeler kullandığında, kibar ve kısa cevaplar ver.
 
-    2. **Malzeme ve/veya Kategori Tabanlı Öneri (Filtreleme):**
-    a) **Öncelik:** Eğer kullanıcı hem malzeme hem de kategori (Örn: '2 yumurta ile kahvaltı') belirtiyorsa, iki filtreyi birden uygula.
-    b) **Miktar Kontrolü:** Kullanıcının elindeki miktarı **AŞAN** tarifleri ele. Elindeki miktarın YETERLİ olduğu 2 veya 3 uygun yemeğin adını listele.
-    c) **Ek Malzeme:** Listelediğin her bir yemek için, elinde *olmayan* **ek olarak gereken temel malzemeleri** (tuz, su, karabiber, sıvı yağ gibi genel mutfak malzemeleri hariç) belirt.
-    d) **Rastgele Öneri:** Eğer malzeme veya kategori belirtilmezse ('Bana bir şey öner'), rastgele 2-3 tarif öner.
-
-    3. **Konuşma Dışı Geri Bildirim veya Selamlaşma:** Kullanıcı 'tamam', 'teşekkürler', 'merhaba' gibi ifadeler kullandığında veya alakasız bir soru sorduğunda, kibarca ve kısa cevaplar ver. **Asla** 'Üzgünüm, benim uzmanlık alanım...' kalıbını kullanma.
-    * Örnek Cevaplar: "Rica ederim, başka nasıl yardımcı olabilirim?", "Merhaba! Hangi tarifi arıyorsunuz?", "Üzgünüm, sadece tarifler konusunda yardımcı olabilirim."
     ---
     Verilen Tarifler (Context):
     {context}
@@ -78,14 +65,18 @@ def setup_rag_chain():
         temperature=0.0
     )
 
-    # 4️⃣ Zincirleri Oluşturma
-    document_chain = create_stuff_documents_chain(llm, prompt)
-    rag_chain = create_retrieval_chain(retriever, document_chain)
+    # 4️⃣ RetrievalQA Zinciri Oluşturma
+    rag_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        chain_type="stuff",
+        retriever=retriever,
+        chain_type_kwargs={"prompt": prompt}
+    )
 
     return rag_chain
 
 
-# Test Bloğu
+# Test Bloğu (Streamlit deploy için değil, local test içindir)
 if __name__ == "__main__":
     try:
         rag_executor = setup_rag_chain()
@@ -100,10 +91,9 @@ if __name__ == "__main__":
                 break
 
             print("Ne Pişirsem Asistan Cevabı: ")
-            response = rag_executor.invoke({"input": user_input})
-            print(response["answer"])
+            response = rag_executor.run(user_input)
+            print(response)
 
     except Exception as e:
         print(f"Hata oluştu: {e}")
         print("Lütfen API anahtarınızın doğru olduğundan ve 'data_loader.py' dosyasının başarıyla çalışmış olduğundan emin olun.")
-
